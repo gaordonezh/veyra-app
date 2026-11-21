@@ -1,17 +1,11 @@
-import { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 
-import { getPayables, type Payable } from "../../src/services/payable.service";
-import { formatMoney } from "../../src/utils/money";
+import { getPayables, type Payable } from '../../src/services/payable.service';
+import { formatMoney } from '../../src/utils/money';
+import { Text, View } from '@/components/Themed';
+import Button from '@/components/Button';
 
 export default function PayablesScreen() {
   const router = useRouter();
@@ -25,7 +19,7 @@ export default function PayablesScreen() {
       setItems(data);
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "No se pudieron cargar las cuentas por pagar.");
+      Alert.alert('Error', 'No se pudieron cargar las cuentas por pagar.');
     } finally {
       setLoading(false);
     }
@@ -39,40 +33,33 @@ export default function PayablesScreen() {
 
   function openDetails(id: number) {
     router.push({
-      pathname: "/payable/[id]",
+      pathname: '/payable/[id]',
       params: { id: String(id) },
     });
   }
 
   function openNew() {
-    router.push("/payable/new");
+    router.push('/payable/new');
   }
 
-  const totalPending = items.reduce(
-    (total, item) => total + item.total_pending,
-    0,
-  );
+  const totalPending = items.reduce((total, item) => total + item.total_pending, 0);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerInfo}>
           <Text style={styles.title}>Por pagar</Text>
-          <Text style={styles.subtitle}>
-            Tus obligaciones y pagos mensuales
-          </Text>
+          <Text style={styles.subtitle}>Tus obligaciones y pagos mensuales</Text>
         </View>
 
-        <Pressable style={styles.addButton} onPress={openNew}>
-          <Text style={styles.addButtonText}>+ Nuevo</Text>
-        </Pressable>
+        <Button label="+ Nuevo" onPress={openNew} />
       </View>
 
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Total pendiente por pagar</Text>
         <Text style={styles.summaryAmount}>{formatMoney(totalPending)}</Text>
         <Text style={styles.summaryDescription}>
-          {items.length} {items.length === 1 ? "pago activo" : "pagos activos"}
+          {items.length} {items.length === 1 ? 'pago activo' : 'pagos activos'}
         </Text>
       </View>
 
@@ -83,45 +70,27 @@ export default function PayablesScreen() {
       ) : (
         <FlatList
           data={items}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={
-            items.length === 0 ? styles.emptyList : styles.list
-          }
+          keyExtractor={item => String(item.id)}
+          contentContainerStyle={items.length === 0 ? styles.emptyList : styles.list}
           renderItem={({ item }) => (
-            <Pressable
-              style={styles.paymentCard}
-              onPress={() => openDetails(item.id)}
-            >
+            <Pressable style={styles.paymentCard} onPress={() => openDetails(item.id)}>
               <View style={styles.paymentInfo}>
                 <Text style={styles.paymentName}>{item.name}</Text>
-                <Text style={styles.paymentDetail}>
-                  Cuota mensual: {formatMoney(item.amount)}
-                </Text>
-                <Text style={styles.paymentDetail}>
-                  Vence cada día {item.due_day}
-                </Text>
+                <Text style={styles.paymentDetail}>Cuota mensual: {formatMoney(item.amount)}</Text>
+                <Text style={styles.paymentDetail}>Vence cada día {item.due_day}</Text>
               </View>
 
               <View style={styles.pendingInfo}>
                 <Text style={styles.pendingLabel}>Pendiente</Text>
-                <Text style={styles.pendingAmount}>
-                  {formatMoney(item.total_pending)}
-                </Text>
+                <Text style={styles.pendingAmount}>{formatMoney(item.total_pending)}</Text>
               </View>
             </Pressable>
           )}
           ListEmptyComponent={
             <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>
-                Todavía no tienes pagos fijos
-              </Text>
-              <Text style={styles.emptyDescription}>
-                Agrega alquileres, servicios, préstamos u otras obligaciones
-                mensuales.
-              </Text>
-              <Pressable style={styles.emptyButton} onPress={openNew}>
-                <Text style={styles.emptyButtonText}>Agregar primer pago</Text>
-              </Pressable>
+              <Text style={styles.emptyTitle}>Todavía no tienes pagos fijos</Text>
+              <Text style={styles.emptyDescription}>Agrega alquileres, servicios, préstamos u otras obligaciones mensuales.</Text>
+              <Button fullWidth size="large" label="Agregar primer pago" onPress={openNew} />
             </View>
           }
         />
@@ -133,13 +102,12 @@ export default function PayablesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F6FA",
     padding: 20,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 22,
     gap: 10,
   },
@@ -148,65 +116,62 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 25,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontWeight: '700',
   },
   subtitle: {
-    color: "#64748B",
+    color: '#64748B',
     fontSize: 12,
     marginTop: 5,
   },
   addButton: {
-    backgroundColor: "#2563EB",
+    backgroundColor: '#2563EB',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
   addButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
+    color: '#FFFFFF',
+    fontWeight: '700',
     fontSize: 13,
   },
   summaryCard: {
-    backgroundColor: "#172554",
+    backgroundColor: '#172554',
     padding: 20,
     borderRadius: 16,
     marginBottom: 26,
   },
   summaryLabel: {
-    color: "#CBD5E1",
+    color: '#CBD5E1',
     fontSize: 13,
   },
   summaryAmount: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 29,
-    fontWeight: "700",
+    fontWeight: '700',
     marginTop: 9,
   },
   summaryDescription: {
-    color: "#CBD5E1",
+    color: '#CBD5E1',
     fontSize: 12,
     marginTop: 8,
   },
   sectionTitle: {
-    color: "#0F172A",
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: '700',
     marginBottom: 14,
   },
   list: {
     paddingBottom: 30,
   },
   paymentCard: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: '#64748B',
     padding: 16,
     marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 8,
   },
   paymentInfo: {
@@ -214,27 +179,26 @@ const styles = StyleSheet.create({
   },
   paymentName: {
     fontSize: 16,
-    color: "#0F172A",
-    fontWeight: "700",
+    fontWeight: '700',
     marginBottom: 7,
   },
   paymentDetail: {
-    color: "#64748B",
+    color: '#64748B',
     fontSize: 12,
     marginTop: 3,
   },
   pendingInfo: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   pendingLabel: {
-    color: "#64748B",
+    color: '#64748B',
     fontSize: 11,
     marginBottom: 5,
   },
   pendingAmount: {
-    color: "#DC2626",
+    color: '#DC2626',
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   loader: {
     marginTop: 40,
@@ -243,32 +207,21 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   emptyCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
     padding: 22,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: '#E2E8F0',
   },
   emptyTitle: {
-    color: "#0F172A",
-    fontWeight: "700",
+    color: '#0F172A',
+    fontWeight: '700',
     fontSize: 15,
     marginBottom: 8,
   },
   emptyDescription: {
-    color: "#64748B",
+    color: '#64748B',
     fontSize: 13,
     lineHeight: 20,
-  },
-  emptyButton: {
-    backgroundColor: "#2563EB",
-    borderRadius: 10,
-    padding: 13,
-    alignItems: "center",
-    marginTop: 18,
-  },
-  emptyButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
   },
 });

@@ -1,23 +1,18 @@
-import { useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-} from "react-native";
-import { useRouter } from "expo-router";
+import { useState } from 'react';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { createPayable } from "../../src/services/payable.service";
+import { createPayable } from '../../src/services/payable.service';
+import { Text } from '@/components/Themed';
+import Input from '@/components/Input';
+import Button from '@/components/Button';
+import DatePickerInput from '@/components/DatePickerInput';
 
 function getToday() {
   const date = new Date();
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
 }
@@ -25,11 +20,11 @@ function getToday() {
 export default function NewPayableScreen() {
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
+  const [name, setName] = useState('');
+  const [amount, setAmount] = useState('');
   const [startDate, setStartDate] = useState(getToday());
-  const [dueDay, setDueDay] = useState("1");
-  const [notes, setNotes] = useState("");
+  const [dueDay, setDueDay] = useState('1');
+  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -44,84 +39,32 @@ export default function NewPayableScreen() {
         notes,
       });
 
-      Alert.alert("Registrado", "El pago fijo se agregó a Por pagar.");
+      Alert.alert('Registrado', 'El pago fijo se agregó a Por pagar.');
       router.back();
     } catch (error) {
-      Alert.alert(
-        "No se pudo guardar",
-        error instanceof Error ? error.message : "Ocurrió un error.",
-      );
+      Alert.alert('No se pudo guardar', error instanceof Error ? error.message : 'Ocurrió un error.');
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Nuevo pago fijo</Text>
-        <Text style={styles.subtitle}>
-          Registra un gasto que debes pagar mensualmente.
-        </Text>
+        <Text style={styles.subtitle}>Registra un gasto que debes pagar mensualmente.</Text>
 
-        <Text style={styles.label}>Nombre del pago</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej. Alquiler, internet, préstamo..."
-          value={name}
-          onChangeText={setName}
-        />
+        <Input label="Nombre del pago" placeholder="Ej. Alquiler, internet, préstamo..." value={name} onChangeText={setName} />
 
-        <Text style={styles.label}>Importe mensual (S/)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej. 500"
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="decimal-pad"
-        />
+        <Input label="Importe mensual (S/)" placeholder="Ej. 500" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
 
-        <Text style={styles.label}>Fecha de inicio</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="AAAA-MM-DD"
-          value={startDate}
-          onChangeText={setStartDate}
-        />
+        <DatePickerInput label="Fecha de inicio" value={startDate} onChange={setStartDate} />
 
-        <Text style={styles.label}>Día de vencimiento</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej. 15"
-          value={dueDay}
-          onChangeText={setDueDay}
-          keyboardType="number-pad"
-        />
+        <Input label="Día de vencimiento" placeholder="Ej. 15" value={dueDay} onChangeText={setDueDay} keyboardType="number-pad" />
 
-        <Text style={styles.label}>Notas (opcional)</Text>
-        <TextInput
-          style={[styles.input, styles.notesInput]}
-          placeholder="Información adicional..."
-          value={notes}
-          onChangeText={setNotes}
-          multiline
-        />
+        <Input label="Notas (opcional)" placeholder="Información adicional..." value={notes} onChangeText={setNotes} multiline />
 
-        <Pressable
-          style={[styles.button, saving && styles.buttonDisabled]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <Text style={styles.buttonText}>
-            {saving ? "Guardando..." : "Guardar pago fijo"}
-          </Text>
-        </Pressable>
+        <Button size="large" label={saving ? 'Guardando...' : 'Guardar pago fijo'} onPress={handleSave} disabled={saving} style={{ marginTop: 32 }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -130,7 +73,6 @@ export default function NewPayableScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F6FA",
   },
   content: {
     padding: 20,
@@ -138,50 +80,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontWeight: '700',
     marginBottom: 8,
   },
   subtitle: {
-    color: "#64748B",
+    color: '#64748B',
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 26,
-  },
-  label: {
-    color: "#334155",
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  input: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 15,
-    color: "#0F172A",
-  },
-  notesInput: {
-    minHeight: 90,
-    textAlignVertical: "top",
-  },
-  button: {
-    backgroundColor: "#2563EB",
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 28,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 15,
   },
 });

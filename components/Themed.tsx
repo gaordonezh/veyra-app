@@ -12,6 +12,7 @@ import Colors from "@/constants/Colors";
 type ThemeProps = {
   lightColor?: string;
   darkColor?: string;
+  transparent?: boolean;
 };
 
 export type TextProps = ThemeProps & RNTextProps;
@@ -39,11 +40,10 @@ export function Text(props: TextProps) {
 }
 
 export function View(props: ViewProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
-  const backgroundColor = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    "background",
-  );
+  const { style, lightColor, darkColor, transparent, ...otherProps } = props;
+  const backgroundColor = transparent
+    ? "transparent"
+    : useThemeColor({ light: lightColor, dark: darkColor }, "background");
 
   return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />;
 }

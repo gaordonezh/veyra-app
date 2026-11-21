@@ -2,21 +2,18 @@ import { useFonts } from "expo-font";
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import "react-native-reanimated";
-
 import { useColorScheme } from "@/components/useColorScheme";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from "expo-router";
+import "react-native-reanimated";
+import { StyleSheet } from "react-native";
+
+export { ErrorBoundary } from "expo-router";
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   anchor: "(tabs)",
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -24,7 +21,6 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -46,47 +42,49 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <SafeAreaView style={StyleSheet.absoluteFill} edges={["top"]}>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-        <Stack.Screen
-          name="transaction/new"
-          options={{ title: "Nuevo movimiento" }}
-        />
+          <Stack.Screen
+            name="transaction/new"
+            options={{ title: "Nuevo movimiento" }}
+          />
 
-        <Stack.Screen
-          name="receivable/new"
-          options={{ title: "Nueva cuenta por cobrar" }}
-        />
+          <Stack.Screen
+            name="receivable/new"
+            options={{ title: "Nueva cuenta por cobrar" }}
+          />
 
-        <Stack.Screen
-          name="receivable/[id]"
-          options={{ title: "Detalle por cobrar" }}
-        />
+          <Stack.Screen
+            name="receivable/[id]"
+            options={{ title: "Detalle por cobrar" }}
+          />
 
-        <Stack.Screen
-          name="receivable/edit/[id]"
-          options={{ title: "Editar cuenta por cobrar" }}
-        />
+          <Stack.Screen
+            name="receivable/edit/[id]"
+            options={{ title: "Editar cuenta por cobrar" }}
+          />
 
-        <Stack.Screen
-          name="payable/new"
-          options={{ title: "Nuevo pago fijo" }}
-        />
+          <Stack.Screen
+            name="payable/new"
+            options={{ title: "Nuevo pago fijo" }}
+          />
 
-        <Stack.Screen
-          name="payable/[id]"
-          options={{ title: "Detalle por pagar" }}
-        />
+          <Stack.Screen
+            name="payable/[id]"
+            options={{ title: "Detalle por pagar" }}
+          />
 
-        <Stack.Screen
-          name="payable/edit/[id]"
-          options={{ title: "Editar pago fijo" }}
-        />
+          <Stack.Screen
+            name="payable/edit/[id]"
+            options={{ title: "Editar pago fijo" }}
+          />
 
-        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-      </Stack>
-    </ThemeProvider>
+          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+        </Stack>
+      </ThemeProvider>
+    </SafeAreaView>
   );
 }

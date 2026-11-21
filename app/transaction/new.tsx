@@ -1,22 +1,12 @@
-import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from 'react';
+import { StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import {
-  createTransaction,
-  getTransaction,
-  updateTransaction,
-} from "@/src/services/transaction.service";
+import { createTransaction, getTransaction, updateTransaction } from '@/src/services/transaction.service';
+import { Text, View } from '@/components/Themed';
+import Input, { inputStyles } from '@/components/Input';
+import Button from '@/components/Button';
+import DatePickerInput from '@/components/DatePickerInput';
 
 export default function NewTransactionScreen() {
   const router = useRouter();
@@ -25,11 +15,11 @@ export default function NewTransactionScreen() {
   const transactionId = Array.isArray(id) ? id[0] : id;
   const isEditing = Boolean(transactionId);
 
-  const [type, setType] = useState<"income" | "expense">("income");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
+  const [type, setType] = useState<'income' | 'expense'>('income');
+  const [description, setDescription] = useState('');
+  const [amount, setAmount] = useState('');
   const [date, setDate] = useState(getLocalDate());
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditing);
@@ -42,34 +32,28 @@ export default function NewTransactionScreen() {
         const parsedId = Number(transactionId);
 
         if (!Number.isInteger(parsedId) || parsedId <= 0) {
-          throw new Error("El identificador del movimiento no es válido.");
+          throw new Error('El identificador del movimiento no es válido.');
         }
 
         const transaction = await getTransaction(parsedId);
 
         if (!transaction) {
-          throw new Error("El movimiento no existe.");
+          throw new Error('El movimiento no existe.');
         }
 
         if (transaction.obligation_id !== null) {
-          throw new Error(
-            "Este movimiento pertenece a un pago de una cuota y no puede editarse aquí.",
-          );
+          throw new Error('Este movimiento pertenece a un pago de una cuota y no puede editarse aquí.');
         }
 
         setType(transaction.type);
         setDescription(transaction.description);
         setAmount((transaction.amount / 100).toFixed(2));
         setDate(transaction.date);
-        setNotes(transaction.notes ?? "");
+        setNotes(transaction.notes ?? '');
       } catch (error) {
-        Alert.alert(
-          "Error",
-          error instanceof Error
-            ? error.message
-            : "No se pudo cargar el movimiento.",
-          [{ text: "Aceptar", onPress: () => router.back() }],
-        );
+        Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo cargar el movimiento.', [
+          { text: 'Aceptar', onPress: () => router.back() },
+        ]);
       } finally {
         setLoadingData(false);
       }
@@ -80,14 +64,14 @@ export default function NewTransactionScreen() {
 
   async function handleSave() {
     if (!description.trim()) {
-      Alert.alert("Atención", "Ingresa una descripción.");
+      Alert.alert('Atención', 'Ingresa una descripción.');
       return;
     }
 
     const parsedAmount = Number(amount);
 
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      Alert.alert("Atención", "Ingresa un monto válido.");
+      Alert.alert('Atención', 'Ingresa un monto válido.');
       return;
     }
 
@@ -108,23 +92,14 @@ export default function NewTransactionScreen() {
         await createTransaction(data);
       }
 
-      Alert.alert(
-        "Correcto",
-        isEditing ? "Movimiento actualizado." : "Movimiento registrado.",
-        [
-          {
-            text: "Aceptar",
-            onPress: () => router.back(),
-          },
-        ],
-      );
+      Alert.alert('Correcto', isEditing ? 'Movimiento actualizado.' : 'Movimiento registrado.', [
+        {
+          text: 'Aceptar',
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error) {
-      Alert.alert(
-        "Error",
-        error instanceof Error
-          ? error.message
-          : "No se pudo guardar el movimiento.",
-      );
+      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo guardar el movimiento.');
     } finally {
       setLoading(false);
     }
@@ -139,94 +114,45 @@ export default function NewTransactionScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>
-          {isEditing ? "Editar movimiento" : "Nuevo movimiento"}
-        </Text>
+        <Text style={styles.title}>{isEditing ? 'Editar movimiento' : 'Nuevo movimiento'}</Text>
 
-        <Text style={styles.label}>Tipo de movimiento</Text>
+        <Text style={inputStyles.label}>Tipo de movimiento</Text>
 
-        <View style={styles.typeContainer}>
-          <Pressable
-            style={[
-              styles.typeButton,
-              type === "income" && styles.incomeActive,
-            ]}
-            onPress={() => setType("income")}
-          >
-            <Text
-              style={[styles.typeText, type === "income" && styles.activeText]}
-            >
-              Ingreso
-            </Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.typeButton,
-              type === "expense" && styles.expenseActive,
-            ]}
-            onPress={() => setType("expense")}
-          >
-            <Text
-              style={[styles.typeText, type === "expense" && styles.activeText]}
-            >
-              Salida
-            </Text>
-          </Pressable>
+        <View transparent style={styles.typeContainer}>
+          <Button
+            fullWidth
+            size="normal"
+            color="success"
+            variant={type === 'income' ? 'contained' : 'outlined'}
+            label="Ingreso"
+            onPress={() => setType('income')}
+          />
+          <Button
+            fullWidth
+            size="normal"
+            color="error"
+            variant={type === 'expense' ? 'contained' : 'outlined'}
+            label="Salida"
+            onPress={() => setType('expense')}
+          />
         </View>
 
-        <Text style={styles.label}>Descripción</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Ej. Pago de trabajo"
-          value={description}
-          onChangeText={setDescription}
-        />
+        <Input label="Descripción" value={description} onChangeText={setDescription} />
 
-        <Text style={styles.label}>Monto (S/)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="0.00"
-          keyboardType="decimal-pad"
-          value={amount}
-          onChangeText={setAmount}
-        />
+        <Input label="Monto (S/)" value={amount} onChangeText={setAmount} />
 
-        <Text style={styles.label}>Fecha</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="AAAA-MM-DD"
-          value={date}
-          onChangeText={setDate}
-        />
+        <DatePickerInput label="Fecha" value={date} onChange={setDate} />
 
-        <Text style={styles.label}>Notas (opcional)</Text>
-        <TextInput
-          style={[styles.input, styles.notes]}
-          placeholder="Observaciones..."
-          multiline
-          value={notes}
-          onChangeText={setNotes}
-        />
+        <Input label="Notas (opcional)" placeholder="Observaciones..." multiline value={notes} onChangeText={setNotes} style={{ marginBottom: 32 }} />
 
-        <Pressable
-          style={[styles.saveButton, loading && styles.disabled]}
-          onPress={handleSave}
+        <Button
           disabled={loading}
-        >
-          <Text style={styles.saveText}>
-            {loading
-              ? "Guardando..."
-              : isEditing
-                ? "Guardar cambios"
-                : "Guardar movimiento"}
-          </Text>
-        </Pressable>
+          label={loading ? 'Guardando...' : isEditing ? 'Guardar cambios' : 'Guardar movimiento'}
+          size="large"
+          onPress={handleSave}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -236,8 +162,8 @@ function getLocalDate() {
   const date = new Date();
 
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}-${month}-${day}`;
 }
@@ -245,7 +171,6 @@ function getLocalDate() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
   },
   content: {
     padding: 20,
@@ -253,74 +178,15 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: '700',
     marginBottom: 24,
-    color: "#171717",
   },
   loadingText: {
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: 30,
-    color: "#737373",
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginTop: 16,
-    color: "#404040",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: "#FFFFFF",
   },
   typeContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 12,
-  },
-  typeButton: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    alignItems: "center",
-  },
-  incomeActive: {
-    backgroundColor: "#DCFCE7",
-    borderColor: "#16A34A",
-  },
-  expenseActive: {
-    backgroundColor: "#FEE2E2",
-    borderColor: "#DC2626",
-  },
-  typeText: {
-    fontWeight: "600",
-    color: "#525252",
-  },
-  activeText: {
-    color: "#171717",
-  },
-  notes: {
-    minHeight: 90,
-    textAlignVertical: "top",
-  },
-  saveButton: {
-    backgroundColor: "#171717",
-    padding: 16,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 28,
-  },
-  saveText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  disabled: {
-    opacity: 0.5,
   },
 });

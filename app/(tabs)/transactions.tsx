@@ -89,7 +89,7 @@ export default function TransactionsScreen() {
       <View style={styles.header}>
         <Text style={styles.title}>Movimientos</Text>
 
-        <Button label="+ Nuevo" size="small" onPress={() => router.push('/transaction/new')} />
+        <Button label="+ Nuevo" size="normal" onPress={() => router.push('/transaction/new')} />
       </View>
 
       {loading ? (
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 32,
   },
   title: {
     fontSize: 24,

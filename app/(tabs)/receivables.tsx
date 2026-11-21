@@ -193,14 +193,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   emptyCard: {
-    backgroundColor: '#FFFFFF',
     padding: 22,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   emptyTitle: {
-    color: '#0F172A',
     fontWeight: '700',
     fontSize: 15,
     marginBottom: 8,
@@ -209,5 +207,6 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 13,
     lineHeight: 20,
+    marginBottom: 16,
   },
 });

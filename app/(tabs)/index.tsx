@@ -126,7 +126,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // backgroundColor: "#F5F6FA",
   },
   content: {
     padding: 20,
@@ -143,7 +142,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 25,
     fontWeight: '700',
-    // color: "#0F172A",
   },
   balanceCard: {
     backgroundColor: '#172554',
@@ -170,6 +168,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
+    marginBottom: 8,
   },
   monthlyCards: {
     flexDirection: 'row',
@@ -178,7 +177,6 @@ const styles = StyleSheet.create({
   },
   monthlyCard: {
     flex: 1,
-    // backgroundColor: "#FFFFFF",
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
@@ -233,7 +231,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   transactionDescription: {
-    // color: "#0F172A",
     fontSize: 14,
     fontWeight: '600',
   },
@@ -247,14 +244,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   emptyCard: {
-    // backgroundColor: "#FFFFFF",
     borderRadius: 14,
     padding: 20,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
   emptyTitle: {
-    color: '#0F172A',
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 6,

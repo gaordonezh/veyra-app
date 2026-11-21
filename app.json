@@ -18,7 +18,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.netappperu.veyraapp"
+      "package": "com.gaordonezh.veyraapp"
     },
     "web": {
       "bundler": "metro",

@@ -3,7 +3,6 @@ import { Tabs } from "expo-router";
 
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
-import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -12,7 +11,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme].tint,
-        headerShown: useClientOnlyValue(false, true),
+        headerShown: false,
         tabBarLabelStyle: {
           fontSize: 11,
         },

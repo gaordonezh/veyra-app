@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,18 +10,73 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { createTransaction } from "@/src/services/transaction.service";
+import { useLocalSearchParams, useRouter } from "expo-router";
+
+import {
+  createTransaction,
+  getTransaction,
+  updateTransaction,
+} from "@/src/services/transaction.service";
 
 export default function NewTransactionScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id?: string }>();
+
+  const transactionId = Array.isArray(id) ? id[0] : id;
+  const isEditing = Boolean(transactionId);
 
   const [type, setType] = useState<"income" | "expense">("income");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(getLocalDate());
   const [notes, setNotes] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(isEditing);
+
+  useEffect(() => {
+    if (!transactionId) return;
+
+    async function loadTransaction() {
+      try {
+        const parsedId = Number(transactionId);
+
+        if (!Number.isInteger(parsedId) || parsedId <= 0) {
+          throw new Error("El identificador del movimiento no es válido.");
+        }
+
+        const transaction = await getTransaction(parsedId);
+
+        if (!transaction) {
+          throw new Error("El movimiento no existe.");
+        }
+
+        if (transaction.obligation_id !== null) {
+          throw new Error(
+            "Este movimiento pertenece a un pago de una cuota y no puede editarse aquí.",
+          );
+        }
+
+        setType(transaction.type);
+        setDescription(transaction.description);
+        setAmount((transaction.amount / 100).toFixed(2));
+        setDate(transaction.date);
+        setNotes(transaction.notes ?? "");
+      } catch (error) {
+        Alert.alert(
+          "Error",
+          error instanceof Error
+            ? error.message
+            : "No se pudo cargar el movimiento.",
+          [{ text: "Aceptar", onPress: () => router.back() }],
+        );
+      } finally {
+        setLoadingData(false);
+      }
+    }
+
+    loadTransaction();
+  }, [transactionId, router]);
 
   async function handleSave() {
     if (!description.trim()) {
@@ -39,30 +94,48 @@ export default function NewTransactionScreen() {
     setLoading(true);
 
     try {
-      await createTransaction({
+      const data = {
         type,
         description,
         amount: parsedAmount,
         date,
         notes,
-      });
+      };
 
-      Alert.alert("Correcto", "Movimiento registrado.", [
-        {
-          text: "Aceptar",
-          onPress: () => router.back(),
-        },
-      ]);
+      if (isEditing) {
+        await updateTransaction(Number(transactionId), data);
+      } else {
+        await createTransaction(data);
+      }
+
+      Alert.alert(
+        "Correcto",
+        isEditing ? "Movimiento actualizado." : "Movimiento registrado.",
+        [
+          {
+            text: "Aceptar",
+            onPress: () => router.back(),
+          },
+        ],
+      );
     } catch (error) {
       Alert.alert(
         "Error",
         error instanceof Error
           ? error.message
-          : "No se pudo registrar el movimiento.",
+          : "No se pudo guardar el movimiento.",
       );
     } finally {
       setLoading(false);
     }
+  }
+
+  if (loadingData) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>Cargando movimiento...</Text>
+      </View>
+    );
   }
 
   return (
@@ -71,7 +144,9 @@ export default function NewTransactionScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Nuevo movimiento</Text>
+        <Text style={styles.title}>
+          {isEditing ? "Editar movimiento" : "Nuevo movimiento"}
+        </Text>
 
         <Text style={styles.label}>Tipo de movimiento</Text>
 
@@ -145,7 +220,11 @@ export default function NewTransactionScreen() {
           disabled={loading}
         >
           <Text style={styles.saveText}>
-            {loading ? "Guardando..." : "Guardar movimiento"}
+            {loading
+              ? "Guardando..."
+              : isEditing
+                ? "Guardar cambios"
+                : "Guardar movimiento"}
           </Text>
         </Pressable>
       </ScrollView>
@@ -177,6 +256,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 24,
     color: "#171717",
+  },
+  loadingText: {
+    textAlign: "center",
+    marginTop: 30,
+    color: "#737373",
   },
   label: {
     fontSize: 14,

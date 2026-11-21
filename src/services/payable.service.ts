@@ -104,7 +104,23 @@ async function generateObligations(ruleId?: number): Promise<void> {
   )}`;
 
   for (const rule of rules) {
-    const startPeriod = rule.start_date.slice(0, 7);
+    const originalStartPeriod = rule.start_date.slice(0, 7);
+
+    const existingObligations = await db.getFirstAsync<{
+      first_period: string | null;
+    }>(
+      `SELECT MIN(period) AS first_period
+   FROM obligations
+   WHERE recurring_rule_id = ?`,
+      rule.id,
+    );
+
+    const firstExistingPeriod = existingObligations?.first_period;
+
+    const startPeriod =
+      firstExistingPeriod && firstExistingPeriod > originalStartPeriod
+        ? firstExistingPeriod
+        : originalStartPeriod;
 
     if (startPeriod > currentPeriod) continue;
 
@@ -182,6 +198,59 @@ export async function createPayable(data: CreatePayableData): Promise<number> {
   await generateObligations(result.lastInsertRowId);
 
   return result.lastInsertRowId;
+}
+
+export interface UpdatePayableData {
+  id: number;
+  name: string;
+  amount: number;
+  startDate: string;
+  dueDay: number;
+  notes?: string;
+}
+
+export async function updatePayable(data: UpdatePayableData): Promise<void> {
+  if (!Number.isInteger(data.id) || data.id <= 0) {
+    throw new Error("El pago seleccionado no es válido.");
+  }
+
+  const name = data.name.trim();
+
+  if (!name) {
+    throw new Error("Debes ingresar el nombre del pago.");
+  }
+
+  if (!data.startDate) {
+    throw new Error("Debes seleccionar una fecha de inicio.");
+  }
+
+  if (!Number.isInteger(data.dueDay) || data.dueDay < 1 || data.dueDay > 31) {
+    throw new Error("El día de vencimiento debe estar entre 1 y 31.");
+  }
+
+  const amount = toCents(data.amount);
+  const db = await getDatabase();
+
+  const result = await db.runAsync(
+    `UPDATE recurring_rules
+     SET
+       name = ?,
+       amount = ?,
+       start_date = ?,
+       due_day = ?,
+       notes = ?
+     WHERE id = ? AND type = 'expense'`,
+    name,
+    amount,
+    data.startDate,
+    data.dueDay,
+    data.notes?.trim() || null,
+    data.id,
+  );
+
+  if (result.changes === 0) {
+    throw new Error("No se encontró el pago fijo.");
+  }
 }
 
 export async function getPayables(): Promise<Payable[]> {

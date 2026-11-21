@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from "expo-sqlite";
-import { Transaction } from "../types";
+import type { Transaction } from "../types";
 
 export interface CreateTransactionData {
   type: "income" | "expense";
@@ -9,6 +9,8 @@ export interface CreateTransactionData {
   notes?: string | null;
 }
 
+export type UpdateTransactionData = CreateTransactionData;
+
 export async function getAllTransactions(
   db: SQLiteDatabase,
 ): Promise<Transaction[]> {
@@ -16,6 +18,18 @@ export async function getAllTransactions(
     `SELECT *
      FROM transactions
      ORDER BY date DESC, id DESC`,
+  );
+}
+
+export async function getTransactionById(
+  db: SQLiteDatabase,
+  id: number,
+): Promise<Transaction | null> {
+  return db.getFirstAsync<Transaction>(
+    `SELECT *
+     FROM transactions
+     WHERE id = ?`,
+    id,
   );
 }
 
@@ -39,6 +53,32 @@ export async function insertTransaction(
   );
 
   return result.lastInsertRowId;
+}
+
+export async function updateTransaction(
+  db: SQLiteDatabase,
+  id: number,
+  data: UpdateTransactionData,
+): Promise<boolean> {
+  const result = await db.runAsync(
+    `UPDATE transactions
+     SET
+       type = ?,
+       description = ?,
+       amount = ?,
+       date = ?,
+       notes = ?
+     WHERE id = ?
+       AND obligation_id IS NULL`,
+    data.type,
+    data.description,
+    data.amount,
+    data.date,
+    data.notes ?? null,
+    id,
+  );
+
+  return result.changes > 0;
 }
 
 export async function removeTransaction(

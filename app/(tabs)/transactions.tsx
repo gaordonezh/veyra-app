@@ -39,7 +39,30 @@ export default function TransactionsScreen() {
     }, [loadTransactions]),
   );
 
-  function confirmDelete(id: number) {
+  function openTransaction(item: Transaction) {
+    if (item.obligation_id !== null) {
+      Alert.alert(
+        "Movimiento vinculado",
+        "Este movimiento corresponde a un pago de una cuota. No se puede editar desde Movimientos.",
+      );
+      return;
+    }
+
+    router.push({
+      pathname: "/transaction/new",
+      params: { id: String(item.id) },
+    });
+  }
+
+  function confirmDelete(item: Transaction) {
+    if (item.obligation_id !== null) {
+      Alert.alert(
+        "Movimiento vinculado",
+        "Este movimiento corresponde a un pago de una cuota. No se puede eliminar desde Movimientos.",
+      );
+      return;
+    }
+
     Alert.alert(
       "Eliminar movimiento",
       "¿Estás seguro de que deseas eliminar este movimiento?",
@@ -50,7 +73,7 @@ export default function TransactionsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await deleteTransaction(id);
+              await deleteTransaction(item.id);
               await loadTransactions();
             } catch (error) {
               Alert.alert(
@@ -70,10 +93,13 @@ export default function TransactionsScreen() {
     const isIncome = item.type === "income";
 
     return (
-      <Pressable style={styles.item} onLongPress={() => confirmDelete(item.id)}>
+      <Pressable
+        style={styles.item}
+        onPress={() => openTransaction(item)}
+        onLongPress={() => confirmDelete(item)}
+      >
         <View style={styles.itemInfo}>
           <Text style={styles.description}>{item.description}</Text>
-
           <Text style={styles.date}>{item.date}</Text>
         </View>
 
@@ -119,7 +145,7 @@ export default function TransactionsScreen() {
       )}
 
       <Text style={styles.hint}>
-        Mantén presionado un movimiento para eliminarlo.
+        Toca un movimiento para editarlo o mantenlo presionado para eliminarlo.
       </Text>
     </View>
   );

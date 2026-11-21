@@ -88,6 +88,13 @@ export default function PayableDetailsScreen() {
     setPaymentAmount("");
   }
 
+  function openEdit() {
+    router.push({
+      pathname: "/payable/edit/[id]",
+      params: { id: String(details?.id ?? id) },
+    });
+  }
+
   async function handlePayment() {
     if (!selectedObligation) return;
 
@@ -148,8 +155,16 @@ export default function PayableDetailsScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>{details.name}</Text>
-      <Text style={styles.subtitle}>Obligación recurrente</Text>
+      <View style={styles.header}>
+        <View style={styles.headerInfo}>
+          <Text style={styles.title}>{details.name}</Text>
+          <Text style={styles.subtitle}>Obligación recurrente</Text>
+        </View>
+
+        <Pressable style={styles.editButton} onPress={openEdit}>
+          <Text style={styles.editButtonText}>Editar</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Total pendiente</Text>
@@ -315,6 +330,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#F5F6FA",
     padding: 20,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 22,
+  },
+  headerInfo: {
+    flex: 1,
+  },
+  editButton: {
+    backgroundColor: "#DBEAFE",
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 9,
+  },
+  editButtonText: {
+    color: "#1D4ED8",
+    fontWeight: "700",
+    fontSize: 13,
   },
   title: {
     fontSize: 25,

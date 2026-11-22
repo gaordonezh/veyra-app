@@ -41,10 +41,10 @@ export const inputStyles = StyleSheet.create({
   },
   inputDark: {
     backgroundColor: '#000000',
-    color: '#f2f2f2',
+    color: '#fcfcfc',
   },
   inputLight: {
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#fcfcfc',
     color: '#000000',
   },
   notes: {

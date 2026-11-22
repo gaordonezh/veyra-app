@@ -1,6 +1,7 @@
 export type TransactionType = "income" | "expense";
 
 export type ObligationStatus = "pending" | "partial" | "paid" | "overpaid";
+export type RecurringFrecuency = "monthly" | "once";
 
 export interface Transaction {
   id: number;
@@ -20,6 +21,7 @@ export interface RecurringRule {
   amount: number;
   start_date: string;
   due_day: number;
+  frequency: RecurringFrecuency;
   active: boolean;
   notes: string | null;
 }

@@ -1,6 +1,6 @@
 import { getDatabase } from "../database/database";
 import { toCents } from "../utils/money";
-import type { ObligationStatus } from "../types";
+import type { ObligationStatus, RecurringFrecuency } from "../types";
 
 export interface Receivable {
   id: number;
@@ -9,6 +9,7 @@ export interface Receivable {
   start_date: string;
   due_day: number;
   active: number;
+  frequency: RecurringFrecuency;
   notes: string | null;
   total_pending: number;
   installment_count: number;
@@ -36,11 +37,12 @@ export interface ReceivableDetails {
   obligations: ReceivableObligation[];
 }
 
-interface CreateReceivableData {
+export interface CreateReceivableData {
   name: string;
   amount: number;
   startDate: string;
   dueDay: number;
+  frequency?: RecurringFrecuency;
   notes?: string;
 }
 
@@ -58,10 +60,7 @@ function getPeriodDate(period: string, day: number): string {
   const lastDay = new Date(year, month, 0).getDate();
   const validDay = Math.min(day, lastDay);
 
-  return `${year}-${String(month).padStart(2, "0")}-${String(validDay).padStart(
-    2,
-    "0",
-  )}`;
+  return `${year}-${String(month).padStart(2, "0")}-${String(validDay).padStart(2, "0")}`;
 }
 
 function getStatus(amountDue: number, amountPaid: number): ObligationStatus {
@@ -75,6 +74,7 @@ function getStatus(amountDue: number, amountPaid: number): ObligationStatus {
  * Genera las cuotas mensuales que correspondan.
  * INSERT OR IGNORE evita duplicar cuotas.
  */
+
 async function generateObligations(ruleId?: number): Promise<void> {
   const db = await getDatabase();
 
@@ -83,8 +83,9 @@ async function generateObligations(ruleId?: number): Promise<void> {
         id: number;
         start_date: string;
         due_day: number;
+        frequency: RecurringFrecuency;
       }>(
-        `SELECT id, start_date, due_day
+        `SELECT id, start_date, due_day, frequency
          FROM recurring_rules
          WHERE id = ? AND type = 'income' AND active = 1`,
         ruleId,
@@ -93,38 +94,56 @@ async function generateObligations(ruleId?: number): Promise<void> {
         id: number;
         start_date: string;
         due_day: number;
+        frequency: RecurringFrecuency;
       }>(
-        `SELECT id, start_date, due_day
+        `SELECT id, start_date, due_day, frequency
          FROM recurring_rules
          WHERE type = 'income' AND active = 1`,
       );
 
+  const today = getLocalDateString(new Date());
+
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
-  const currentPeriod = `${currentYear}-${String(currentMonth).padStart(
-    2,
-    "0",
-  )}`;
+  const currentPeriod = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
 
   for (const rule of rules) {
+    if (rule.frequency === "once") {
+      if (rule.start_date > today) continue;
+
+      await db.runAsync(
+        `INSERT OR IGNORE INTO obligations (
+          recurring_rule_id,
+          period,
+          amount_due,
+          due_date
+        )
+        SELECT id, ?, amount, ?
+        FROM recurring_rules
+        WHERE id = ?`,
+        rule.start_date.slice(0, 7),
+        rule.start_date,
+        rule.id,
+      );
+
+      continue;
+    }
+
     const originalStartPeriod = rule.start_date.slice(0, 7);
 
     const existingObligations = await db.getFirstAsync<{
       first_period: string | null;
     }>(
       `SELECT MIN(period) AS first_period
-   FROM obligations
-   WHERE recurring_rule_id = ?`,
+       FROM obligations
+       WHERE recurring_rule_id = ?`,
       rule.id,
     );
 
     const firstExistingPeriod = existingObligations?.first_period;
 
-    const startPeriod =
-      firstExistingPeriod && firstExistingPeriod > originalStartPeriod
-        ? firstExistingPeriod
-        : originalStartPeriod;
+    const startPeriod = firstExistingPeriod && firstExistingPeriod > originalStartPeriod ? firstExistingPeriod : originalStartPeriod;
 
     if (startPeriod > currentPeriod) continue;
 
@@ -133,10 +152,7 @@ async function generateObligations(ruleId?: number): Promise<void> {
     let year = startYear;
     let month = startMonth;
 
-    while (
-      year < currentYear ||
-      (year === currentYear && month <= currentMonth)
-    ) {
+    while (year < currentYear || (year === currentYear && month <= currentMonth)) {
       const period = `${year}-${String(month).padStart(2, "0")}`;
       const dueDate = getPeriodDate(period, rule.due_day);
 
@@ -165,13 +181,12 @@ async function generateObligations(ruleId?: number): Promise<void> {
   }
 }
 
-export async function createReceivable(
-  data: CreateReceivableData,
-): Promise<number> {
+export async function createReceivable(data: CreateReceivableData): Promise<number> {
   const name = data.name.trim();
+  const frequency = data.frequency ?? "monthly";
 
   if (!name) {
-    throw new Error("Debes ingresar el nombre de la persona.");
+    throw new Error("Debes ingresar la descripción.");
   }
 
   if (!data.startDate) {
@@ -185,25 +200,38 @@ export async function createReceivable(
   const amount = toCents(data.amount);
   const db = await getDatabase();
 
-  const result = await db.runAsync(
-    `INSERT INTO recurring_rules (
-      type,
+  let ruleId = 0;
+
+  await db.withTransactionAsync(async () => {
+    const result = await db.runAsync(
+      `INSERT INTO recurring_rules (
+        type, name, amount, start_date, due_day, frequency, notes
+      ) VALUES ('income', ?, ?, ?, ?, ?, ?)`,
       name,
       amount,
-      start_date,
-      due_day,
-      notes
-    ) VALUES ('income', ?, ?, ?, ?, ?)`,
-    name,
-    amount,
-    data.startDate,
-    data.dueDay,
-    data.notes?.trim() || null,
-  );
+      data.startDate,
+      data.dueDay,
+      frequency,
+      data.notes?.trim() || null,
+    );
 
-  await generateObligations(result.lastInsertRowId);
+    ruleId = result.lastInsertRowId;
 
-  return result.lastInsertRowId;
+    if (frequency === "once") {
+      await db.runAsync(
+        `INSERT INTO transactions (
+          type, description, amount, date
+        ) VALUES ('expense', ?, ?, ?)`,
+        `Préstamo otorgado a ${name}`,
+        amount,
+        data.startDate,
+      );
+    }
+  });
+
+  await generateObligations(ruleId);
+
+  return ruleId;
 }
 
 export interface UpdateReceivableData {
@@ -212,12 +240,11 @@ export interface UpdateReceivableData {
   amount: number;
   startDate: string;
   dueDay: number;
+  frequency?: RecurringFrecuency;
   notes?: string;
 }
 
-export async function updateReceivable(
-  data: UpdateReceivableData,
-): Promise<void> {
+export async function updateReceivable(data: UpdateReceivableData): Promise<void> {
   if (!Number.isInteger(data.id) || data.id <= 0) {
     throw new Error("La cuenta seleccionada no es válida.");
   }
@@ -246,12 +273,14 @@ export async function updateReceivable(
        amount = ?,
        start_date = ?,
        due_day = ?,
+       frequency = COALESCE(?, frequency),
        notes = ?
      WHERE id = ? AND type = 'income'`,
     name,
     amount,
     data.startDate,
     data.dueDay,
+    data.frequency ?? null,
     data.notes?.trim() || null,
     data.id,
   );
@@ -273,6 +302,7 @@ export async function getReceivables(): Promise<Receivable[]> {
       r.amount,
       r.start_date,
       r.due_day,
+      r.frequency,
       r.active,
       r.notes,
       COALESCE(
@@ -299,15 +329,13 @@ export async function getReceivables(): Promise<Receivable[]> {
   );
 }
 
-export async function getReceivableDetails(
-  id: number,
-): Promise<ReceivableDetails | null> {
+export async function getReceivableDetails(id: number): Promise<ReceivableDetails | null> {
   await generateObligations(id);
 
   const db = await getDatabase();
 
   const rule = await db.getFirstAsync<Omit<ReceivableDetails, "obligations">>(
-    `SELECT id, name, amount, start_date, due_day, active, notes
+    `SELECT id, name, amount, start_date, due_day, frequency, active, notes
      FROM recurring_rules
      WHERE id = ? AND type = 'income'`,
     id,
@@ -359,11 +387,7 @@ export async function getReceivableDetails(
   };
 }
 
-export async function registerReceivablePayment(
-  obligationId: number,
-  amount: number,
-  date = getLocalDateString(new Date()),
-): Promise<void> {
+export async function registerReceivablePayment(obligationId: number, amount: number, date = getLocalDateString(new Date())): Promise<void> {
   const amountInCents = toCents(amount);
   const db = await getDatabase();
 

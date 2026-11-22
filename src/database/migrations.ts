@@ -1,9 +1,7 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
 export async function runMigrations(db: SQLiteDatabase) {
-  const result = await db.getFirstAsync<{ user_version: number }>(
-    "PRAGMA user_version",
-  );
+  const result = await db.getFirstAsync<{ user_version: number }>("PRAGMA user_version");
 
   const currentVersion = result?.user_version ?? 0;
 
@@ -21,15 +19,13 @@ export async function runMigrations(db: SQLiteDatabase) {
 
       CREATE TABLE recurring_rules (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT NOT NULL
-          CHECK(type IN ('income', 'expense')),
+        type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
         name TEXT NOT NULL,
         amount INTEGER NOT NULL CHECK(amount > 0),
         start_date TEXT NOT NULL,
-        due_day INTEGER NOT NULL
-          CHECK(due_day BETWEEN 1 AND 31),
-        active INTEGER NOT NULL DEFAULT 1
-          CHECK(active IN (0, 1)),
+        due_day INTEGER NOT NULL CHECK(due_day BETWEEN 1 AND 31),
+        frequency TEXT NOT NULL DEFAULT 'monthly' CHECK(frequency IN ('monthly', 'once')),
+        active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0, 1)),
         notes TEXT,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
@@ -51,8 +47,7 @@ export async function runMigrations(db: SQLiteDatabase) {
 
       CREATE TABLE transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT NOT NULL
-          CHECK(type IN ('income', 'expense')),
+        type TEXT NOT NULL CHECK(type IN ('income', 'expense')),
         description TEXT NOT NULL,
         amount INTEGER NOT NULL CHECK(amount > 0),
         date TEXT NOT NULL,

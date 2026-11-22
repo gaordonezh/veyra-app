@@ -1,47 +1,20 @@
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useState } from "react";
+import { Alert, ScrollView, StyleSheet } from "react-native";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 
 import {
   getReceivableDetails,
   registerReceivablePayment,
   type ReceivableDetails,
   type ReceivableObligation,
-} from '../../src/services/receivable.service';
-import { formatMoney } from '../../src/utils/money';
-import { Text, View } from '@/components/Themed';
-import Input from '@/components/Input';
-import Button from '@/components/Button';
-
-function formatPeriod(period: string) {
-  const date = new Date(`${period}-01T00:00:00`);
-
-  return date.toLocaleDateString('es-PE', {
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-function formatDate(date: string) {
-  return new Date(`${date}T00:00:00`).toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function getStatusLabel(status: ReceivableObligation['status']) {
-  switch (status) {
-    case 'pending':
-      return 'Pendiente';
-    case 'partial':
-      return 'Pago parcial';
-    case 'paid':
-      return 'Pagada';
-    case 'overpaid':
-      return 'Pago excedido';
-  }
-}
+} from "../../src/services/receivable.service";
+import { formatMoney } from "../../src/utils/money";
+import { Text, View } from "@/components/Themed";
+import Button from "@/components/Button";
+import RecurrentCard from "@/components/RecurrentCard";
+import ResumeCard from "@/components/ResumeCard";
+import PaymentCard from "@/components/PaymentCard";
+import PreviousLoading from "@/components/PreviousLoading";
 
 export default function ReceivableDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -50,7 +23,6 @@ export default function ReceivableDetailsScreen() {
   const [details, setDetails] = useState<ReceivableDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedObligation, setSelectedObligation] = useState<ReceivableObligation | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState('');
   const [saving, setSaving] = useState(false);
 
   const loadDetails = useCallback(async () => {
@@ -59,7 +31,7 @@ export default function ReceivableDetailsScreen() {
       setDetails(data);
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'No se pudo cargar la cuenta.');
+      Alert.alert("Error", "No se pudo cargar la cuenta.");
     } finally {
       setLoading(false);
     }
@@ -71,50 +43,35 @@ export default function ReceivableDetailsScreen() {
     }, [loadDetails]),
   );
 
-  function startPayment(obligation: ReceivableObligation) {
-    setSelectedObligation(obligation);
-    setPaymentAmount((obligation.amount_pending / 100).toFixed(2));
-  }
-
-  function cancelPayment() {
-    setSelectedObligation(null);
-    setPaymentAmount('');
-  }
-
   function openEdit() {
     router.push({
-      pathname: '/receivable/edit/[id]',
+      pathname: "/receivable/edit/[id]",
       params: { id: String(details?.id ?? id) },
     });
   }
 
-  async function handlePayment() {
+  async function handlePayment(amount: string) {
     if (!selectedObligation) return;
 
     try {
       setSaving(true);
 
-      await registerReceivablePayment(selectedObligation.id, Number(paymentAmount));
+      await registerReceivablePayment(selectedObligation.id, Number(amount));
 
       setSelectedObligation(null);
-      setPaymentAmount('');
 
       await loadDetails();
 
-      Alert.alert('Pago registrado', 'El abono se registró como un ingreso y actualizó la cuenta.');
+      Alert.alert("Pago registrado", "El abono se registró como un ingreso y actualizó la cuenta.");
     } catch (error) {
-      Alert.alert('No se pudo registrar el pago', error instanceof Error ? error.message : 'Ocurrió un error.');
+      Alert.alert("No se pudo registrar el pago", error instanceof Error ? error.message : "Ocurrió un error.");
     } finally {
       setSaving(false);
     }
   }
 
   if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
-    );
+    return <PreviousLoading />;
   }
 
   if (!details) {
@@ -140,44 +97,18 @@ export default function ReceivableDetailsScreen() {
         <Button label="Editar" variant="outlined" onPress={openEdit} />
       </View>
 
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>Total pendiente</Text>
-        <Text style={styles.summaryAmount}>{formatMoney(totalPending)}</Text>
-        <View style={styles.summaryDivider} />
-        <Text style={styles.summaryDetail}>Cuota mensual: {formatMoney(details.amount)}</Text>
-        <Text style={styles.summaryDetail}>Vencimiento: día {details.due_day} de cada mes</Text>
-      </View>
+      <ResumeCard
+        helper="Total pendiente"
+        title={formatMoney(totalPending)}
+        divider
+        details={[`Cuota mensual: ${formatMoney(details.amount)}`, `Vencimiento: día ${details.due_day} de cada mes`]}
+      />
 
-      {details.notes ? (
-        <View style={styles.notesCard}>
-          <Text style={styles.notesTitle}>Notas</Text>
-          <Text style={styles.notesText}>{details.notes}</Text>
-        </View>
+      {details.notes ? <ResumeCard helper="Notas" title="" divider={false} details={[details.notes ?? ""]} /> : null}
+
+      {selectedObligation ? (
+        <PaymentCard record={selectedObligation} loading={saving} onCancel={() => setSelectedObligation(null)} onOk={handlePayment} />
       ) : null}
-
-      {selectedObligation && (
-        <View style={styles.paymentCard}>
-          <Text style={styles.paymentTitle}>Registrar abono</Text>
-          <Text style={styles.paymentSubtitle}>{formatPeriod(selectedObligation.period)}</Text>
-
-          <Text style={styles.paymentLabel}>Importe pendiente</Text>
-          <Text style={styles.paymentPending}>{formatMoney(selectedObligation.amount_pending)}</Text>
-
-          <Input label="Importe recibido (S/)" value={paymentAmount} onChangeText={setPaymentAmount} keyboardType="decimal-pad" placeholder="0.00" />
-
-          <View style={styles.paymentActions}>
-            <Button fullWidth label="Cancelar" variant="outlined" color="error" onPress={cancelPayment} disabled={saving} />
-            <Button
-              fullWidth
-              label={saving ? 'Guardando...' : 'Confirmar abono'}
-              variant="contained"
-              color="primary"
-              onPress={handlePayment}
-              disabled={saving}
-            />
-          </View>
-        </View>
-      )}
 
       <Text style={styles.sectionTitle}>Cuotas mensuales</Text>
 
@@ -186,50 +117,9 @@ export default function ReceivableDetailsScreen() {
           <Text style={styles.emptyText}>Todavía no hay cuotas generadas.</Text>
         </View>
       ) : (
-        details.obligations.map(obligation => {
-          const isPaid = obligation.status === 'paid' || obligation.status === 'overpaid';
-
-          return (
-            <View key={obligation.id} style={styles.obligationCard}>
-              <View style={styles.obligationHeader}>
-                <View style={styles.obligationInfo}>
-                  <Text style={styles.obligationPeriod}>{formatPeriod(obligation.period)}</Text>
-                  <Text style={styles.obligationDate}>Vencimiento: {formatDate(obligation.due_date)}</Text>
-                </View>
-
-                <View
-                  style={[
-                    styles.statusBadge,
-                    isPaid ? styles.paidBadge : obligation.status === 'partial' ? styles.partialBadge : styles.pendingBadge,
-                  ]}>
-                  <Text
-                    style={[styles.statusText, isPaid ? styles.paidText : obligation.status === 'partial' ? styles.partialText : styles.pendingText]}>
-                    {getStatusLabel(obligation.status)}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.amountsRow}>
-                <View>
-                  <Text style={styles.amountLabel}>Cuota</Text>
-                  <Text style={styles.amountValue}>{formatMoney(obligation.amount_due)}</Text>
-                </View>
-
-                <View>
-                  <Text style={styles.amountLabel}>Abonado</Text>
-                  <Text style={styles.amountValue}>{formatMoney(obligation.amount_paid)}</Text>
-                </View>
-
-                <View>
-                  <Text style={styles.amountLabel}>Pendiente</Text>
-                  <Text style={styles.pendingValue}>{formatMoney(obligation.amount_pending)}</Text>
-                </View>
-              </View>
-
-              {!isPaid && <Button fullWidth label="Registrar abono" onPress={() => startPayment(obligation)} />}
-            </View>
-          );
-        })
+        details.obligations.map((obligation, index) => (
+          <RecurrentCard key={index + 1} obligation={obligation} startPayment={() => setSelectedObligation(obligation)} />
+        ))
       )}
     </ScrollView>
   );
@@ -244,230 +134,46 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: 10,
     marginBottom: 32,
   },
   headerInfo: {
     flex: 1,
   },
-  editButton: {
-    backgroundColor: '#DBEAFE',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 9,
-  },
-  editButtonText: {
-    color: '#1D4ED8',
-    fontWeight: '700',
-    fontSize: 13,
-  },
   centered: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
   },
   title: {
     fontSize: 25,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   subtitle: {
     fontSize: 13,
-    color: '#64748B',
+    color: "#64748B",
     marginTop: 5,
-  },
-  summaryCard: {
-    backgroundColor: '#172554',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 18,
-  },
-  summaryLabel: {
-    color: '#CBD5E1',
-    fontSize: 13,
-  },
-  summaryAmount: {
-    color: '#FFFFFF',
-    fontSize: 29,
-    fontWeight: '700',
-    marginTop: 8,
-  },
-  summaryDivider: {
-    height: 1,
-    backgroundColor: '#334155',
-    marginVertical: 16,
-  },
-  summaryDetail: {
-    color: '#CBD5E1',
-    fontSize: 13,
-    marginTop: 5,
-  },
-  notesCard: {
-    backgroundColor: '#23397f',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  notesTitle: {
-    color: '#0F172A',
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  notesText: {
-    color: '#64748B',
-    lineHeight: 20,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
     marginTop: 8,
     marginBottom: 14,
   },
-  obligationCard: {
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: '#64748B',
-    padding: 16,
-    marginBottom: 12,
-  },
-  obligationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  obligationInfo: {
-    flex: 1,
-  },
-  obligationPeriod: {
-    fontSize: 15,
-    fontWeight: '700',
-    textTransform: 'capitalize',
-  },
-  obligationDate: {
-    color: '#64748B',
-    fontSize: 12,
-    marginTop: 5,
-  },
-  statusBadge: {
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  pendingBadge: {
-    backgroundColor: '#FEF2F2',
-  },
-  partialBadge: {
-    backgroundColor: '#FFF7ED',
-  },
-  paidBadge: {
-    backgroundColor: '#F0FDF4',
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  pendingText: {
-    color: '#DC2626',
-  },
-  partialText: {
-    color: '#C2410C',
-  },
-  paidText: {
-    color: '#15803D',
-  },
-  amountsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 20,
-    gap: 8,
-  },
-  amountLabel: {
-    color: '#64748B',
-    fontSize: 11,
-    marginBottom: 5,
-  },
-  amountValue: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  pendingValue: {
-    color: '#DC2626',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  paymentCard: {
-    borderRadius: 14,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: '#64748B',
-    marginBottom: 22,
-  },
-  paymentTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  paymentSubtitle: {
-    color: '#64748B',
-    fontSize: 13,
-    marginTop: 4,
-    textTransform: 'capitalize',
-  },
-  paymentLabel: {
-    color: '#64748B',
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 7,
-  },
-  paymentPending: {
-    color: '#DC2626',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  paymentActions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 18,
-  },
-  cancelButton: {
-    flex: 1,
-    padding: 13,
-    borderRadius: 9,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#334155',
-    fontWeight: '600',
-  },
-  confirmButton: {
-    flex: 1,
-    padding: 13,
-    borderRadius: 9,
-    backgroundColor: '#2563EB',
-    alignItems: 'center',
-  },
-  confirmButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
   emptyCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 18,
   },
   emptyText: {
-    color: '#64748B',
+    color: "#64748B",
   },
   notFound: {
-    color: '#0F172A',
+    color: "#0F172A",
     fontSize: 16,
     marginBottom: 14,
   },

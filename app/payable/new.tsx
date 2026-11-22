@@ -1,92 +1,34 @@
-import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useState } from "react";
+import { Alert } from "react-native";
+import { useRouter } from "expo-router";
 
-import { createPayable } from '../../src/services/payable.service';
-import { Text } from '@/components/Themed';
-import Input from '@/components/Input';
-import Button from '@/components/Button';
-import DatePickerInput from '@/components/DatePickerInput';
-
-function getToday() {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-}
+import { createPayable, CreatePayableData } from "../../src/services/payable.service";
+import PayableForm from "@/components/PayableForm";
 
 export default function NewPayableScreen() {
   const router = useRouter();
-
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [startDate, setStartDate] = useState(getToday());
-  const [dueDay, setDueDay] = useState('1');
-  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  async function handleSave() {
+  async function handleSave(fields: CreatePayableData) {
     try {
       setSaving(true);
 
-      await createPayable({
-        name,
-        amount: Number(amount),
-        startDate,
-        dueDay: Number(dueDay),
-        notes,
-      });
+      await createPayable(fields);
 
-      Alert.alert('Registrado', 'El pago fijo se agregó a Por pagar.');
+      Alert.alert("Registrado", "El pago fijo se agregó a Por pagar.");
       router.back();
     } catch (error) {
-      Alert.alert('No se pudo guardar', error instanceof Error ? error.message : 'Ocurrió un error.');
+      Alert.alert("No se pudo guardar", error instanceof Error ? error.message : "Ocurrió un error.");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Nuevo pago fijo</Text>
-        <Text style={styles.subtitle}>Registra un gasto que debes pagar mensualmente.</Text>
-
-        <Input label="Nombre del pago" placeholder="Ej. Alquiler, internet, préstamo..." value={name} onChangeText={setName} />
-
-        <Input label="Importe mensual (S/)" placeholder="Ej. 500" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
-
-        <DatePickerInput label="Fecha de inicio" value={startDate} onChange={setStartDate} />
-
-        <Input label="Día de vencimiento" placeholder="Ej. 15" value={dueDay} onChangeText={setDueDay} keyboardType="number-pad" />
-
-        <Input label="Notas (opcional)" placeholder="Información adicional..." value={notes} onChangeText={setNotes} multiline />
-
-        <Button size="large" label={saving ? 'Guardando...' : 'Guardar pago fijo'} onPress={handleSave} disabled={saving} style={{ marginTop: 32 }} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <PayableForm
+      loading={saving}
+      handleSave={handleSave}
+      header={{ title: "Nuevo pago fijo", subtitle: "Registra un gasto que debes pagar mensualmente." }}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: '#64748B',
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 26,
-  },
-});

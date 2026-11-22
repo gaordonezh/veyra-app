@@ -47,42 +47,19 @@ function RootLayoutNav() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
-          <Stack.Screen
-            name="transaction/new"
-            options={{ title: "Nuevo movimiento" }}
-          />
+          <Stack.Screen name="transaction/new" options={{ title: "Nuevo movimiento" }} />
 
-          <Stack.Screen
-            name="receivable/new"
-            options={{ title: "Nueva cuenta por cobrar" }}
-          />
+          <Stack.Screen name="receivable/new" options={{ title: "Nueva cuenta por cobrar" }} />
 
-          <Stack.Screen
-            name="receivable/[id]"
-            options={{ title: "Detalle por cobrar" }}
-          />
+          <Stack.Screen name="receivable/[id]" options={{ title: "Detalle por cobrar" }} />
 
-          <Stack.Screen
-            name="receivable/edit/[id]"
-            options={{ title: "Editar cuenta por cobrar" }}
-          />
+          <Stack.Screen name="receivable/edit/[id]" options={{ title: "Editar cuenta por cobrar" }} />
 
-          <Stack.Screen
-            name="payable/new"
-            options={{ title: "Nuevo pago fijo" }}
-          />
+          <Stack.Screen name="payable/new" options={{ title: "Nuevo pago fijo" }} />
 
-          <Stack.Screen
-            name="payable/[id]"
-            options={{ title: "Detalle por pagar" }}
-          />
+          <Stack.Screen name="payable/[id]" options={{ title: "Detalle por pagar" }} />
 
-          <Stack.Screen
-            name="payable/edit/[id]"
-            options={{ title: "Editar pago fijo" }}
-          />
-
-          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+          <Stack.Screen name="payable/edit/[id]" options={{ title: "Editar pago fijo" }} />
         </Stack>
       </ThemeProvider>
     </SafeAreaView>

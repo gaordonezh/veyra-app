@@ -1,5 +1,5 @@
 import { PropsWithChildren, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from "react-native";
 
 import { Text, View } from "@/components/Themed";
 import Input, { inputStyles } from "@/components/Input";

@@ -17,7 +17,7 @@ export async function getAllTransactions(
   return db.getAllAsync<Transaction>(
     `SELECT *
      FROM transactions
-     ORDER BY date DESC, id DESC`,
+     ORDER BY created_at DESC, id DESC`,
   );
 }
 

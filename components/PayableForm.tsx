@@ -31,11 +31,12 @@ const PayableForm = ({ handleSave, loading, record, header, children }: PropsWit
   const isOnce = fields.frequency === "once";
 
   const onSubmit = () => {
+    fields.amount = Number(fields.amount);
     handleSave(fields);
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>{header.title}</Text>
         <Text style={styles.subtitle}>{header.subtitle}</Text>
@@ -78,7 +79,10 @@ const PayableForm = ({ handleSave, loading, record, header, children }: PropsWit
           label={isOnce ? "Importe (S/)" : "Importe mensual (S/)"}
           placeholder="Ej. 500"
           value={String(fields.amount)}
-          onChangeText={(amount) => setFields((prev) => ({ ...prev, amount: (Number(amount) || "") as number }))}
+          onChangeText={(amount) => {
+            // @ts-expect-error amount
+            setFields((prev) => ({ ...prev, amount }));
+          }}
           keyboardType="decimal-pad"
         />
 

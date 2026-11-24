@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   obligationCard: {
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: "#64748B",
+    borderColor: "#E2E8F0",
     padding: 16,
     marginBottom: 12,
   },

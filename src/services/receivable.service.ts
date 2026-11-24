@@ -325,7 +325,7 @@ export async function getReceivables(): Promise<Receivable[]> {
     WHERE r.type = 'income' AND r.active = 1
 
     GROUP BY r.id
-    ORDER BY r.name COLLATE NOCASE`,
+    ORDER BY r.created_at DESC, r.id DESC`,
   );
 }
 
@@ -367,7 +367,7 @@ export async function getReceivableDetails(id: number): Promise<ReceivableDetail
     WHERE o.recurring_rule_id = ?
 
     GROUP BY o.id
-    ORDER BY o.period DESC`,
+    ORDER BY o.created_at DESC, o.id DESC`,
     id,
   );
 

@@ -72,7 +72,7 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
   >(
     `SELECT id, type, description, amount, date
      FROM transactions
-     ORDER BY date DESC, id DESC
+     ORDER BY created_at DESC, id DESC
      LIMIT 5`,
   );
 

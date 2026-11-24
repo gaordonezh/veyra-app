@@ -115,7 +115,7 @@ export default function NewTransactionScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>{isEditing ? "Editar movimiento" : "Nuevo movimiento"}</Text>
 
@@ -142,7 +142,7 @@ export default function NewTransactionScreen() {
 
         <Input label="Descripción" value={description} onChangeText={setDescription} />
 
-        <Input label="Monto (S/)" value={amount} onChangeText={setAmount} />
+        <Input label="Monto (S/)" value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
 
         <DatePickerInput label="Fecha" value={date} onChange={setDate} />
 

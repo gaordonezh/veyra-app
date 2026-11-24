@@ -63,7 +63,7 @@ export default function ReceivablesScreen() {
         details={[`${items.length} ${items.length === 1 ? "cuenta activa" : "cuentas activas"}`]}
       />
 
-      <Text style={styles.sectionTitle}>Personas</Text>
+      <Text style={styles.sectionTitle}>Lista de pendientes</Text>
 
       {loading ? (
         <ActivityIndicator style={styles.loader} color="#2563EB" size="large" />
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   personCard: {
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: "#757575",
+    borderColor: "#E2E8F0",
     padding: 16,
     marginBottom: 12,
     flexDirection: "row",
